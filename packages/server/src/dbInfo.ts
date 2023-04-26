@@ -10,6 +10,7 @@ export class DbInfoImpl implements DbInfo {
   public functionSignatures: Map<string, SignatureInformation> = new Map();
   public labels: string[] = [];
   public relationshipTypes: string[] = [];
+  public properties: string[] = [];
 
   private dbPollingInterval: NodeJS.Timer | undefined;
 
@@ -43,6 +44,7 @@ export class DbInfoImpl implements DbInfo {
     const updateLabelsAndTypes = async () => {
       await this.updateLabels();
       await this.updateRelationshipTypes();
+      await this.updateProperties();
     };
 
     await this.updateMethodsCache(this.procedureSignatures);
@@ -92,6 +94,22 @@ export class DbInfoImpl implements DbInfo {
       );
     } catch (error) {
       console.log('could not contact the database to fetch relationship types');
+    } finally {
+      await s.close();
+    }
+  }
+
+  private async updateProperties() {
+    if (!this.neo4j) return;
+    const s: Session = this.neo4j.session({ defaultAccessMode: session.READ });
+
+    try {
+      const result = await s.run('CALL db.propertyKeys()');
+      this.properties = result.records.map(
+        (record) => record.get('propertyKey') as string,
+      );
+    } catch (error) {
+      console.log('could not contact the database to fetch property keys');
     } finally {
       await s.close();
     }

@@ -33,6 +33,7 @@ describe('Procedures signature help', () => {
   const dbWithProcedure = new MockDbInfo(
     [],
     [],
+    [],
     new Map([['apoc.do.when', signature]]),
   );
 
@@ -147,6 +148,7 @@ describe('Functions signature help', () => {
     ],
   );
   const dbWithFunction = new MockDbInfo(
+    [],
     [],
     [],
     new Map(),

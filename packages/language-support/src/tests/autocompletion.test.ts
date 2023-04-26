@@ -83,6 +83,18 @@ describe('MATCH auto-completion', () => {
     );
   });
 
+  test('Correctly completes property in MATCH', () => {
+    const query = 'MATCH (n {n';
+    const position = Position.create(0, query.length);
+
+    testAutoCompletionContains(
+      query,
+      position,
+      new MockDbInfo([], [], ['name', 'id']),
+      [{ label: 'name', kind: CompletionItemKind.Variable }],
+    );
+  });
+
   test('Correctly completes WHERE', () => {
     const query = 'MATCH (n:Person) W';
     const position = Position.create(0, query.length);
@@ -218,6 +230,7 @@ describe('Procedures auto-completion', () => {
       new MockDbInfo(
         [],
         [],
+        [],
         new Map([
           ['foo.bar', SignatureInformation.create('')],
           ['dbms.info', SignatureInformation.create('')],
@@ -258,7 +271,7 @@ describe('Functions auto-completion', () => {
     testAutoCompletionContains(
       query,
       position,
-      new MockDbInfo([], [], new Map(), new Map(functionSignatures)),
+      new MockDbInfo([], [], [], new Map(), new Map(functionSignatures)),
       [
         { label: 'xx.yy.proc', kind: CompletionItemKind.Function },
         { label: 'xx.yy.procedure', kind: CompletionItemKind.Function },
@@ -273,7 +286,7 @@ describe('Functions auto-completion', () => {
     testAutoCompletionContains(
       query,
       position,
-      new MockDbInfo([], [], new Map(), new Map(functionSignatures)),
+      new MockDbInfo([], [], [], new Map(), new Map(functionSignatures)),
       [
         { label: 'xx.yy.proc', kind: CompletionItemKind.Function },
         { label: 'xx.yy.procedure', kind: CompletionItemKind.Function },
@@ -288,7 +301,7 @@ describe('Functions auto-completion', () => {
     testAutoCompletionContains(
       query,
       position,
-      new MockDbInfo([], [], new Map(), new Map(functionSignatures)),
+      new MockDbInfo([], [], [], new Map(), new Map(functionSignatures)),
       [
         { label: 'xx.yy.proc', kind: CompletionItemKind.Function },
         { label: 'xx.yy.procedure', kind: CompletionItemKind.Function },
@@ -303,7 +316,7 @@ describe('Functions auto-completion', () => {
     testAutoCompletionContains(
       query,
       position,
-      new MockDbInfo([], [], new Map(), new Map(functionSignatures)),
+      new MockDbInfo([], [], [], new Map(), new Map(functionSignatures)),
       [
         { label: 'xx.yy.proc', kind: CompletionItemKind.Function },
         { label: 'xx.yy.procedure', kind: CompletionItemKind.Function },
