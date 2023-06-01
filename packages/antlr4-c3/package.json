@@ -15,8 +15,8 @@
     "grammar",
     "parser"
   ],
-  "type": "module",
-  "main": "index.ts",
+  "main": "./out/index.js",
+  "types": "./out/index.d.ts",
   "scripts": {
     "build": "npm run generate && tsc",
     "prepublishOnly": "npm run generate && npm run test",
