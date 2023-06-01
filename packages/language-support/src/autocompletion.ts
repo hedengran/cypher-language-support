@@ -104,7 +104,7 @@ export function autocomplete(
 
         // TODO Nacho Why did it have to be -2 here?
         // Is it because of the end of file?
-        const caretIndex = tokenStream.size - 2;
+        const caretIndex = tokenStream.tokens.length - 2;
 
         if (caretIndex >= 0) {
           // TODO Nacho Can this be extracted for more performance?
