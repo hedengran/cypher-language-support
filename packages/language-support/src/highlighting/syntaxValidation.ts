@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Diagnostic,
   DiagnosticSeverity,
@@ -45,6 +46,37 @@ export class ErrorListener implements ANTLRErrorListener<CommonToken> {
     };
     this.diagnostics.push(diagnostic);
   }
+
+  public reportAttemptingFullContext(
+    _recognizer,
+    _dfa,
+    _startIndex,
+    _stopIndex,
+    _conflictingAlts,
+    _configs,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+  ) {}
+
+  public reportAmbiguity(
+    _recognizer,
+    _dfa,
+    _startIndex,
+    _stopIndex,
+    _exact,
+    _ambigAlts,
+    _configs,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+  ) {}
+
+  public reportContextSensitivity(
+    _recognizer,
+    _dfa,
+    _startIndex,
+    _stopIndex,
+    _prediction,
+    _configs,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+  ) {}
 }
 
 export function validateSyntax(wholeFileText: string): Diagnostic[] {
