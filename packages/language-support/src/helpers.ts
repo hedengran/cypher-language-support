@@ -1,5 +1,13 @@
-import { CommonTokenStream, ParserRuleContext, Token } from 'antlr4';
-import { StatementsContext } from './generated-parser/CypherParser';
+import {
+  CommonTokenStream,
+  ParserRuleContext,
+  TerminalNode,
+  Token,
+} from 'antlr4';
+import {
+  ClauseContext,
+  StatementsContext,
+} from './generated-parser/CypherParser';
 
 export function findStopNode(root: StatementsContext) {
   let children = root.children;
@@ -36,6 +44,33 @@ export function findParent(
   }
 
   return current;
+}
+
+export function findRightmostClause(root: StatementsContext) {
+  let children = root.children;
+  let current: ParserRuleContext = root;
+
+  while (children && children.length > 0) {
+    let index = children.length - 1;
+    let child = children[index];
+
+    while (
+      index > 0 &&
+      (child === root.EOF() ||
+        child.getText() === '' ||
+        child.getText().startsWith('<missing') ||
+        child instanceof TerminalNode)
+    ) {
+      index--;
+      child = children[index];
+    }
+    current = child as ParserRuleContext;
+
+    if (current instanceof ClauseContext) return current;
+    children = current.children;
+  }
+
+  return undefined;
 }
 
 export function getTokens(tokenStream: CommonTokenStream): Token[] {

@@ -332,3 +332,33 @@ M`;
     ]);
   });
 });
+
+describe('Big queries auto-completion', () => {
+  test('Correctly completes big query', () => {
+    const query = `
+      CREATE (JohnC)-[:LIKES]->(JohnnyMnemonic)
+      CREATE (JohnC)-[:LIKES]->(CloudAtlas)
+
+      WITH collect(null) as x // Reduce cardinality
+      CALL {
+          MATCH(m:Movie)-[:ACTED_IN]-(p:Person)
+          WITH m, p ORDER BY p.name DESC
+          WITH m, head(collect(p)) as fav
+          CREATE(m)-[:FAV]->(fav)
+          RETURN NULL as n
+      }
+      RETURN NULL
+
+      W
+    `;
+    const lines = query.split('\n');
+    const lastLineIndex = lines.length - 1;
+    const lastLine = lines.at(lastLineIndex);
+    const lastLineColumn = lastLine.length;
+    const position = Position.create(lastLineIndex, lastLineColumn);
+
+    testAutoCompletionContains(query, position, new MockDbInfo(), [
+      { label: 'WITH', kind: CompletionItemKind.Keyword },
+    ]);
+  });
+});
