@@ -48,20 +48,16 @@ function isLabel(p: ParserRuleContext) {
   );
 }
 
-function parse(
-  parser: CypherParser,
-  textUntilPosition: string,
-  message: string,
-) {
-  const inputStream = CharStreams.fromString(textUntilPosition);
-
-  const start = new Date().getTime();
+export function parseString(input: string) {
+  const inputStream = CharStreams.fromString(input);
   const lexer = new CypherLexer(inputStream);
   const tokenStream = new CommonTokenStream(lexer);
-  parser.setTokenStream(tokenStream);
+  const parser = new CypherParser(tokenStream);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  //parser._interp.predictionMode = PredictionMode.LL;
+  //parser.buildParseTrees = false;
   parser.removeErrorListeners();
-  const tree = parser.statements();
-  console.log(message, new Date().getTime() - start);
+  parser.statements();
 }
 
 export function autocomplete(
@@ -75,13 +71,11 @@ export function autocomplete(
   const lexer = new CypherLexer(inputStream);
   const tokenStream = new CommonTokenStream(lexer);
   const wholeFileParser = new CypherParser(tokenStream);
+  wholeFileParser.buildParseTrees = false;
   wholeFileParser.removeErrorListeners();
   const tree = wholeFileParser.statements();
 
   console.log('Time elapsed first parse: ', new Date().getTime() - start);
-
-  parse(wholeFileParser, textUntilPosition, 'Time elapsed second parse');
-  parse(wholeFileParser, textUntilPosition, 'Time elapsed third parse');
 
   const tokens = getTokens(tokenStream);
   const lastToken = tokens[tokens.length - 2];
