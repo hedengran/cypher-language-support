@@ -59,7 +59,10 @@ export function autocomplete(
   const tokenStream = new CommonTokenStream(lexer);
   const wholeFileParser = new CypherParser(tokenStream);
   wholeFileParser.removeErrorListeners();
+  const start = new Date().getTime();
   const tree = wholeFileParser.statements();
+  console.log('Time passed first parse: ', new Date().getTime() - start);
+
   const tokens = getTokens(tokenStream);
   const lastToken = tokens[tokens.length - 2];
 
@@ -131,16 +134,21 @@ export function autocomplete(
           const lastStatementParser = new CypherParser(keywordsTokenStream);
           lastStatementParser.removeErrorListeners();
 
+          const start = new Date().getTime();
           autoCompletions = completeKeywords(
             lastStatementParser,
             lastStatementParser.statements(),
             keywordsTokenStream,
           );
+          const elapsed = new Date().getTime() - start;
+          console.log('Time spent in terminal node auto-completion: ', elapsed);
         }
-
+        const start = new Date().getTime();
         autoCompletions = autoCompletions.concat(
           completeKeywords(wholeFileParser, tree, tokenStream),
         );
+        const elapsed = new Date().getTime() - start;
+        console.log('Time spent in wholeFileParser auto-completion: ', elapsed);
 
         return autoCompletions;
       }
