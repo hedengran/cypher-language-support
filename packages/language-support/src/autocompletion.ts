@@ -48,6 +48,22 @@ function isLabel(p: ParserRuleContext) {
   );
 }
 
+function parse(
+  parser: CypherParser,
+  textUntilPosition: string,
+  message: string,
+) {
+  const inputStream = CharStreams.fromString(textUntilPosition);
+
+  const start = new Date().getTime();
+  const lexer = new CypherLexer(inputStream);
+  const tokenStream = new CommonTokenStream(lexer);
+  parser.setTokenStream(tokenStream);
+  parser.removeErrorListeners();
+  const tree = parser.statements();
+  console.log(message, new Date().getTime() - start);
+}
+
 export function autocomplete(
   textUntilPosition: string,
   position: Position,
@@ -55,13 +71,17 @@ export function autocomplete(
 ): CompletionItem[] {
   const inputStream = CharStreams.fromString(textUntilPosition);
 
+  const start = new Date().getTime();
   const lexer = new CypherLexer(inputStream);
   const tokenStream = new CommonTokenStream(lexer);
   const wholeFileParser = new CypherParser(tokenStream);
   wholeFileParser.removeErrorListeners();
-  const start = new Date().getTime();
   const tree = wholeFileParser.statements();
-  console.log('Time passed first parse: ', new Date().getTime() - start);
+
+  console.log('Time elapsed first parse: ', new Date().getTime() - start);
+
+  parse(wholeFileParser, textUntilPosition, 'Time elapsed second parse');
+  parse(wholeFileParser, textUntilPosition, 'Time elapsed third parse');
 
   const tokens = getTokens(tokenStream);
   const lastToken = tokens[tokens.length - 2];
