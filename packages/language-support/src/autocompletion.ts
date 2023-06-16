@@ -4,15 +4,7 @@ import {
   Position,
 } from 'vscode-languageserver-types';
 
-import {
-  CharStreams,
-  CommonTokenStream,
-  ParserRuleContext,
-  TerminalNode,
-  Token,
-} from 'antlr4';
-
-import CypherLexer from './generated-parser/CypherLexer';
+import { CommonTokenStream, ParserRuleContext, Token } from 'antlr4';
 
 import CypherParser, {
   Expression2Context,
@@ -32,6 +24,7 @@ import {
   findStopNode,
   getTokens,
 } from './helpers';
+import { parserCache } from './parserCache';
 
 export function positionIsParsableToken(lastToken: Token, position: Position) {
   const tokenLength = lastToken.text?.length ?? 0;
@@ -48,36 +41,14 @@ function isLabel(p: ParserRuleContext) {
   );
 }
 
-export function parseString(input: string) {
-  const inputStream = CharStreams.fromString(input);
-  const lexer = new CypherLexer(inputStream);
-  const tokenStream = new CommonTokenStream(lexer);
-  const parser = new CypherParser(tokenStream);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  //parser._interp.predictionMode = PredictionMode.LL;
-  //parser.buildParseTrees = false;
-  parser.removeErrorListeners();
-  parser.statements();
-}
-
 export function autocomplete(
   textUntilPosition: string,
   position: Position,
   dbInfo: DbInfo,
 ): CompletionItem[] {
-  const inputStream = CharStreams.fromString(textUntilPosition);
-
-  const start = new Date().getTime();
-  const lexer = new CypherLexer(inputStream);
-  const tokenStream = new CommonTokenStream(lexer);
-  const wholeFileParser = new CypherParser(tokenStream);
-  wholeFileParser.buildParseTrees = false;
-  wholeFileParser.removeErrorListeners();
-  const tree = wholeFileParser.statements();
-
-  console.log('Time elapsed first parse: ', new Date().getTime() - start);
-
-  const tokens = getTokens(tokenStream);
+  const parseResult = parserCache.parse(textUntilPosition);
+  const tokens = getTokens(parseResult.tokenStream);
+  const tree = parseResult.result;
   const lastToken = tokens[tokens.length - 2];
 
   if (!positionIsParsableToken(lastToken, position)) {
@@ -136,35 +107,11 @@ export function autocomplete(
           };
         });
       } else {
-        let autoCompletions: CompletionItem[] = [];
-        // Minus EOF
-        const lastStatement = tree.getChild(tree.getChildCount() - 2);
-        if (lastStatement instanceof TerminalNode) {
-          const keywordsStream = CharStreams.fromString(
-            lastStatement.symbol.text,
-          );
-          const keywordsLexer = new CypherLexer(keywordsStream);
-          const keywordsTokenStream = new CommonTokenStream(keywordsLexer);
-          const lastStatementParser = new CypherParser(keywordsTokenStream);
-          lastStatementParser.removeErrorListeners();
-
-          const start = new Date().getTime();
-          autoCompletions = completeKeywords(
-            lastStatementParser,
-            lastStatementParser.statements(),
-            keywordsTokenStream,
-          );
-          const elapsed = new Date().getTime() - start;
-          console.log('Time spent in terminal node auto-completion: ', elapsed);
-        }
-        const start = new Date().getTime();
-        autoCompletions = autoCompletions.concat(
-          completeKeywords(wholeFileParser, tree, tokenStream),
+        return completeKeywords(
+          parseResult.parser,
+          parseResult.result,
+          parseResult.tokenStream,
         );
-        const elapsed = new Date().getTime() - start;
-        console.log('Time spent in wholeFileParser auto-completion: ', elapsed);
-
-        return autoCompletions;
       }
     }
   }

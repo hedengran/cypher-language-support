@@ -1,6 +1,6 @@
 const {
-  parseString,
-} = require('./packages/language-support/out/autocompletion.js');
+  parseStringTime,
+} = require('./packages/language-support/out/parseBenchmark.js');
 
 const query = `
       CREATE (TheMatrix:Movie {title:'The Matrix', released:1999, tagline:'Welcome to the Real World'})
@@ -628,9 +628,7 @@ const query = `
     `;
 
 const results = Array.from({ length: 15 }).map((t) => {
-  const start = performance.now();
-  parseString(query);
-  return performance.now() - start;
+  return parseStringTime(query);
 });
 
 const withoutFirst = results.slice(1, results.length);
