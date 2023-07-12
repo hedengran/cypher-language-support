@@ -314,23 +314,31 @@ export class CodeCompletionCore {
 
         const pipeline: ATNState[] = [transition.target];
 
+        const visited = new Set()
+
         while (pipeline.length > 0) {
             const state = pipeline.pop();
+            const stateNumber = state.stateNumber;
+            
+            if (!visited.has(stateNumber)) {
+                visited.add(stateNumber);
 
-            if (state) {
-                state.transitions.forEach((outgoing: any) => {
-                    if (outgoing.serializationType === outgoing.constructor.ATOM) {
-                        if (!outgoing.isEpsilon) {
-                            const list = intervalSetToArray(outgoing.label);
-                            if (list.length === 1 && !this.ignoredTokens.has(list[0])) {
-                                result.push(list[0]);
+                if (state) {
+                    state.transitions.forEach((outgoing: any) => {
+                        const outgoingType = outgoing.serializationType
+                        if (outgoingType === outgoing.constructor.ATOM || outgoingType === outgoing.constructor.EPSILON) {
+                            if (!outgoing.isEpsilon) {
+                                const list = intervalSetToArray(outgoing.label);
+                                if (list.length === 1 && !this.ignoredTokens.has(list[0])) {
+                                    result.push(list[0]);
+                                    pipeline.push(outgoing.target);
+                                }
+                            } else {
                                 pipeline.push(outgoing.target);
                             }
-                        } else {
-                            pipeline.push(outgoing.target);
                         }
-                    }
-                });
+                    });
+                }
             }
         }
 
