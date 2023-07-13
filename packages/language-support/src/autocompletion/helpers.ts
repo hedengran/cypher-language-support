@@ -222,10 +222,17 @@ export function autoCompleteKeywords(parsingResult: ParsingResult) {
 
     const tokenCandidates = Array.from(tokens).map((value) => {
       const [tokenNumber, followUpList] = value;
-      return [tokenNumber]
-        .concat(followUpList)
-        .map((value) => tokenNames[value])
-        .join(' ');
+      const firstToken = tokenNames.at(tokenNumber);
+
+      const validFollowUps = followUpList.filter(
+        (token) => token >= 0 && token < tokenNames.length,
+      );
+
+      if (validFollowUps.length != 1) {
+        return firstToken;
+      } else {
+        return firstToken + ' ' + tokenNames.at(validFollowUps[0]);
+      }
     });
 
     const tokenCompletions: CompletionItem[] = tokenCandidates.map((t) => {

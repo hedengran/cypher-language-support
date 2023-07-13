@@ -53,15 +53,6 @@ describe('MATCH auto-completion', () => {
     ]);
   });
 
-  test('Correctly completes OPTIONAL MATCH', () => {
-    const query = 'OP';
-    const position = Position.create(0, query.length);
-
-    testCompletionContains(query, position, new MockDbInfo(), [
-      { label: 'OPTIONAL MATCH', kind: CompletionItemKind.Keyword },
-    ]);
-  });
-
   test('Correctly completes MATCH in OPTIONAL MATCH', () => {
     const query = 'OPTIONAL M';
     const position = Position.create(0, query.length);
@@ -457,6 +448,44 @@ M`;
 
     testCompletionContains(query, position, new MockDbInfo(), [
       { label: 'MATCH', kind: CompletionItemKind.Keyword },
+    ]);
+  });
+});
+
+describe('Auto completion of back to back keywords', () => {
+  test('Correctly completes OPTIONAL MATCH', () => {
+    const query = 'OP';
+    const position = Position.create(0, query.length);
+
+    testCompletionContains(query, position, new MockDbInfo(), [
+      { label: 'OPTIONAL MATCH', kind: CompletionItemKind.Keyword },
+    ]);
+  });
+
+  test('Correctly completes DEFAULT DATABASE', () => {
+    const query = 'SHOW ';
+    const position = Position.create(0, query.length);
+
+    testCompletionContains(query, position, new MockDbInfo(), [
+      { label: 'DEFAULT DATABASE', kind: CompletionItemKind.Keyword },
+    ]);
+  });
+
+  test('Correctly completes HOME DATABASE', () => {
+    const query = 'SHOW ';
+    const position = Position.create(0, query.length);
+
+    testCompletionContains(query, position, new MockDbInfo(), [
+      { label: 'HOME DATABASE', kind: CompletionItemKind.Keyword },
+    ]);
+  });
+
+  test('Correctly completes DATABASE in SHOW', () => {
+    const query = 'SHOW ';
+    const position = Position.create(0, query.length);
+
+    testCompletionContains(query, position, new MockDbInfo(), [
+      { label: 'DATABASE', kind: CompletionItemKind.Keyword },
     ]);
   });
 });
