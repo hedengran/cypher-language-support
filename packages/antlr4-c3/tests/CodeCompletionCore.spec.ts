@@ -23,7 +23,7 @@ import {
   Recognizer,
   Token,
 } from 'antlr4';
-import { CodeCompletionCore } from '../src/CodeCompletionCore';
+import { CandidatesCollection, CodeCompletionCore } from '../src/CodeCompletionCore';
 import ExprLexer from './generated/ExprLexer';
 import ExprParser from './generated/ExprParser';
 
@@ -43,6 +43,10 @@ export class TestErrorListener extends ErrorListener<CommonToken> {
   ): void {
     ++this.errorCount;
   }
+}
+
+function getTokenIndexes(candidates: CandidatesCollection, token: number) {
+  return candidates.tokens.get(token).map(t => t.index)
 }
 
 describe('Code Completion Tests', () => {
@@ -557,15 +561,15 @@ describe('Code Completion Tests', () => {
       expect(candidates.tokens.has(ExprLexer.LET)).toEqual(true);
       expect(candidates.tokens.has(ExprLexer.ID)).toEqual(true);
 
-      expect(candidates.tokens.get(ExprLexer.VAR)).toEqual([
+      expect(getTokenIndexes(candidates, ExprLexer.VAR)).toEqual([
         ExprLexer.ID,
         ExprLexer.EQUAL,
       ]);
-      expect(candidates.tokens.get(ExprLexer.LET)).toEqual([
+      expect(getTokenIndexes(candidates, ExprLexer.LET)).toEqual([
         ExprLexer.ID,
         ExprLexer.EQUAL,
       ]);
-      expect(candidates.tokens.get(ExprLexer.ID)).toEqual([]);
+      expect(getTokenIndexes(candidates, ExprLexer.ID)).toEqual([]);
 
       // 2) On the first whitespace. In real implementations you would do some additional checks where in the
       //    whitespace the caret is, as the outcome is different depending on that position.
@@ -636,11 +640,11 @@ describe('Code Completion Tests', () => {
       expect(candidates.tokens.has(ExprLexer.VAR)).toEqual(true);
       expect(candidates.tokens.has(ExprLexer.LET)).toEqual(true);
 
-      expect(candidates.tokens.get(ExprLexer.VAR)).toEqual([
+      expect(getTokenIndexes(candidates, ExprLexer.VAR)).toEqual([
         ExprLexer.ID,
         ExprLexer.EQUAL,
       ]);
-      expect(candidates.tokens.get(ExprLexer.LET)).toEqual([
+      expect(getTokenIndexes(candidates, ExprLexer.LET)).toEqual([
         ExprLexer.ID,
         ExprLexer.EQUAL,
       ]);

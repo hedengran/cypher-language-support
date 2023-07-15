@@ -220,18 +220,24 @@ export function autoCompleteKeywords(parsingResult: ParsingResult) {
     const candidates = codeCompletion.collectCandidates(caretIndex);
     const tokens = candidates.tokens.entries();
 
-    const tokenCandidates = Array.from(tokens).map((value) => {
+    const tokenCandidates = Array.from(tokens).flatMap((value) => {
       const [tokenNumber, followUpList] = value;
       const firstToken = tokenNames.at(tokenNumber);
 
       const validFollowUps = followUpList.filter(
-        (token) => token >= 0 && token < tokenNames.length,
+        (token) => token.index >= 0 && token.index < tokenNames.length,
       );
 
       if (validFollowUps.length != 1) {
-        return firstToken;
+        return [firstToken];
       } else {
-        return firstToken + ' ' + tokenNames.at(validFollowUps[0]);
+        const followUp = validFollowUps[0];
+        const compoundToken = firstToken + ' ' + tokenNames.at(followUp.index);
+        if (followUp.optional) {
+          return [firstToken, compoundToken];
+        } else {
+          return [compoundToken];
+        }
       }
     });
 

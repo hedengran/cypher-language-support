@@ -488,6 +488,17 @@ describe('Auto completion of back to back keywords', () => {
       { label: 'DATABASE', kind: CompletionItemKind.Keyword },
     ]);
   });
+
+  test('Correctly completes UNION and UNION ALL', () => {
+    const query =
+      'MATCH (a:Person)-[:KNOWS]->(b:Person) RETURN b.name AS name ';
+    const position = Position.create(0, query.length);
+
+    testCompletionContains(query, position, new MockDbInfo(), [
+      { label: 'UNION', kind: CompletionItemKind.Keyword },
+      { label: 'UNION ALL', kind: CompletionItemKind.Keyword },
+    ]);
+  });
 });
 
 describe('Inserts correct text when symbolic name is not display name', () => {

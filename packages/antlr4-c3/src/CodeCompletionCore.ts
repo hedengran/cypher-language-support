@@ -13,7 +13,7 @@ import { VocabularyImpl } from './VocabularyImpl';
 import { ATNState, ParserRuleContext, IntervalSet, Token, Parser, PrecedencePredicateTransition,
     PredicateTransition, RuleStartState, RuleTransition, Transition, ATN, intervalSetOf, intervalSetToArray } from './antrl4';
 
-export type TokenList = number[];
+export type TokenList = FollowingToken[];
 export type RuleList = number[];
 
 export interface CandidateRule {
@@ -24,6 +24,11 @@ export interface CandidateRule {
 export interface RuleWithStartToken {
     startTokenIndex: number;
     ruleIndex: number;
+}
+
+export interface FollowingToken {
+    index: number,
+    optional: boolean
 }
 
 export type RuleWithStartTokenList = RuleWithStartToken[];
@@ -67,6 +72,11 @@ type RuleEndStatus = Set<number>;
 interface IPipelineEntry {
     state: ATNState;
     tokenListIndex: number;
+}
+
+interface OptionalState {
+    isOptional: boolean,
+    optionalTarget?: number
 }
 
 // The main class for doing the collection process.
@@ -200,7 +210,7 @@ export class CodeCompletionCore {
             for (const token of this.candidates.tokens) {
                 let value = this.vocabulary.getDisplayName(token[0]);
                 for (const following of token[1]) {
-                    value += " " + this.vocabulary.getDisplayName(following);
+                    value += " " + this.vocabulary.getDisplayName(following.index);
                 }
                 sortedTokens.add(value);
             }
@@ -302,6 +312,33 @@ export class CodeCompletionCore {
         return false;
     }
 
+    private isOptionalKeyword(state: ATNState): OptionalState {
+        const transitions = state.transitions
+        const BLOCK_END = state.constructor.BLOCK_END
+        const BLOCK_START = state.constructor.BLOCK_START
+        
+        if (state.stateType === BLOCK_START && transitions.length == 2) {
+            const a = transitions[0].target
+            const b = transitions[1].target
+
+            if (a.stateType === BLOCK_END) {
+                return {
+                    isOptional: true,
+                    optionalTarget: a.stateNumber
+                }
+            } else if (b.stateType === BLOCK_END) {
+                return {
+                    isOptional: true,
+                    optionalTarget: b.stateNumber
+                }
+            }
+        }
+
+        return {
+            isOptional: false
+        }
+    }
+
     /**
      * This method follows the given transition and collects all symbols within the same rule that directly follow it
      * without intermediate transitions to other rules and only if there is a single symbol for a transition.
@@ -309,12 +346,14 @@ export class CodeCompletionCore {
      * @param transition The transition from which to start.
      * @returns A list of toke types.
      */
-    private getFollowingTokens(transition: Transition): number[] {
-        const result: number[] = [];
+    private getFollowingTokens(transition: Transition): FollowingToken[] {
+        const result: FollowingToken[] = [];
 
         const pipeline: ATNState[] = [transition.target];
 
         const visited = new Set()
+        let isOptional = false
+        let optionalTarget: number | undefined = undefined
 
         while (pipeline.length > 0) {
             const state = pipeline.pop();
@@ -324,14 +363,31 @@ export class CodeCompletionCore {
                 visited.add(stateNumber);
 
                 if (state) {
-                    state.transitions.forEach((outgoing: any) => {
+                    if (!isOptional) {
+                        const optionalState = this.isOptionalKeyword(state)
+                        isOptional = optionalState.isOptional
+                        optionalTarget = optionalState.optionalTarget
+                    }
+
+                    state.transitions.forEach((outgoing: Transition) => {
                         const outgoingType = outgoing.serializationType
                         if (outgoingType === outgoing.constructor.ATOM || outgoingType === outgoing.constructor.EPSILON) {
                             if (!outgoing.isEpsilon) {
                                 const list = intervalSetToArray(outgoing.label);
                                 if (list.length === 1 && !this.ignoredTokens.has(list[0])) {
-                                    result.push(list[0]);
+                                    const current: FollowingToken = {
+                                        index: list[0],
+                                        optional: isOptional
+                                    }
+                                    result.push(current);
                                     pipeline.push(outgoing.target);
+                                    
+                                    // Reset the state type for the next optional
+                                    const targetState = outgoing.target.stateNumber
+                                    if (optionalTarget !== undefined && targetState === optionalTarget) {
+                                        isOptional = false
+                                        optionalTarget = undefined
+                                    }
                                 }
                             } else {
                                 pipeline.push(outgoing.target);
