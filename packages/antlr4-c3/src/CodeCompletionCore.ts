@@ -357,12 +357,12 @@ export class CodeCompletionCore {
 
         while (pipeline.length > 0) {
             const state = pipeline.pop();
-            const stateNumber = state.stateNumber;
-            
-            if (!visited.has(stateNumber)) {
-                visited.add(stateNumber);
 
-                if (state) {
+            if (state) {
+                const stateNumber = state.stateNumber;
+        
+                if (!visited.has(stateNumber)) {
+                    visited.add(stateNumber);
                     if (!isOptional) {
                         const optionalState = this.isOptionalKeyword(state)
                         isOptional = optionalState.isOptional
@@ -371,6 +371,8 @@ export class CodeCompletionCore {
 
                     state.transitions.forEach((outgoing: Transition) => {
                         const outgoingType = outgoing.serializationType
+                        const outgoingTarget = outgoing.target
+
                         if (outgoingType === outgoing.constructor.ATOM || outgoingType === outgoing.constructor.EPSILON) {
                             if (!outgoing.isEpsilon) {
                                 const list = intervalSetToArray(outgoing.label);
@@ -380,16 +382,16 @@ export class CodeCompletionCore {
                                         optional: isOptional
                                     }
                                     result.push(current);
-                                    pipeline.push(outgoing.target);
+                                    pipeline.push(outgoingTarget);
                                     
                                     // Reset the state type for the next optional
-                                    const targetState = outgoing.target.stateNumber
-                                    if (optionalTarget !== undefined && targetState === optionalTarget) {
+                                    const targetState = outgoingTarget.stateNumber
+                                    if (isOptional && optionalTarget !== undefined && targetState === optionalTarget) {
                                         isOptional = false
                                         optionalTarget = undefined
                                     }
                                 }
-                            } else {
+                            } else if (outgoingTarget.stateNumber !== optionalTarget) {
                                 pipeline.push(outgoing.target);
                             }
                         }

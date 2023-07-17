@@ -1,6 +1,5 @@
-import { ParserRuleContext } from 'antlr4';
+import { ParserRuleContext, Token } from 'antlr4';
 import { CodeCompletionCore } from 'antlr4-c3';
-import { Token } from 'antlr4-c3/out/src/antrl4';
 import {
   CompletionItem,
   CompletionItemKind,
@@ -228,7 +227,7 @@ export function autoCompleteKeywords(parsingResult: ParsingResult) {
         (token) => token.index >= 0 && token.index < tokenNames.length,
       );
 
-      if (validFollowUps.length != 1) {
+      if (validFollowUps.length == 0) {
         return [firstToken];
       } else {
         const followUp = validFollowUps[0];

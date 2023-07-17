@@ -13,6 +13,8 @@ import CPP14Lexer from './generated/CPP14Lexer';
 import CPP14Parser from './generated/CPP14Parser';
 import WhiteboxLexer from './generated/WhiteboxLexer';
 import WhiteboxParser from './generated/WhiteboxParser';
+import OptionalsLexer from './generated/OptionalsLexer';
+import OptionalsParser from './generated/OptionalsParser';
 
 import {
   CharStreams,
@@ -774,6 +776,24 @@ describe('Code Completion Tests', () => {
       expect(
         candidates.rules.get(ExprParser.RULE_variableRef)?.startTokenIndex,
       ).toEqual(6);
+    });
+
+    it('Optional tokens', () => {
+      const inputStream = CharStreams.fromString('A');
+      const lexer = new OptionalsLexer(inputStream);
+      const tokenStream = new CommonTokenStream(lexer);
+
+      const parser = new OptionalsParser(tokenStream);
+      parser.removeErrorListeners()
+      parser.expression();
+
+      const core = new CodeCompletionCore(parser);
+
+      let candidates = core.collectCandidates(0);
+      expect(candidates.tokens.get(OptionalsLexer.A)).toEqual([
+        {index: OptionalsLexer.B, optional: true},
+        {index: OptionalsLexer.C, optional: false}
+      ]);
     });
   });
 });
