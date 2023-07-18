@@ -441,6 +441,15 @@ describe('Misc auto-completion', () => {
     ]);
   });
 
+  test('Correctly completes DISTINCT', () => {
+    const query = 'MATCH (n:Person)-[r:KNOWS]-(m:Person) RETURN D';
+    const position = Position.create(0, query.length);
+
+    testCompletionContains(query, position, new MockDbInfo(), [
+      { label: 'DISTINCT', kind: CompletionItemKind.Keyword },
+    ]);
+  });
+
   test('Correctly completes MATCH in multiline statement', () => {
     const query = `CALL dbms.info() YIELD *;
 M`;

@@ -114,7 +114,7 @@ export function autoCompleteStructurally(
   parsingResult: ParsingResult,
   position: Position,
   dbInfo: DbInfo,
-): CompletionItem[] | undefined {
+): CompletionItem[] {
   const tokens = parsingResult.tokens;
   const tree = parsingResult.result;
   const lastToken = tokens[tokens.length - 2];
@@ -123,7 +123,7 @@ export function autoCompleteStructurally(
     return [];
   } else if (lastToken.type === CypherParser.SPACE) {
     // If the last token is a space, we surely cannot auto-complete using parsing tree information
-    return undefined;
+    return [];
   } else {
     const stopNode = findStopNode(tree);
 
@@ -140,7 +140,7 @@ export function autoCompleteStructurally(
       } else if (inProcedureName(stopNode)) {
         return autoCompleteProcNames(dbInfo);
       } else {
-        return undefined;
+        return [];
       }
     }
   }
@@ -150,7 +150,7 @@ export function autoCompleteStructurallyAddingChar(
   textUntilPosition: string,
   oldPosition: Position,
   dbInfo: DbInfo,
-): CompletionItem[] | undefined {
+): CompletionItem[] {
   // Try adding a filling character, x, at the end
   const position = Position.create(oldPosition.line, oldPosition.character + 1);
   const parsingResult = parserWrapper.parse(textUntilPosition + 'x');
@@ -162,7 +162,7 @@ export function autoCompleteStructurallyAddingChar(
     return [];
   } else if (lastToken.type === CypherParser.SPACE) {
     // If the last token is a space, we surely cannot auto-complete using parsing tree information
-    return undefined;
+    return [];
   } else {
     const stopNode = findStopNode(tree);
 
@@ -184,7 +184,7 @@ export function autoCompleteStructurallyAddingChar(
       // RETURN n
       return autocompleteLabels(dbInfo).concat(autocompleteRelTypes(dbInfo));
     } else {
-      return undefined;
+      return [];
     }
   }
 }
