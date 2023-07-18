@@ -312,36 +312,29 @@ export class CodeCompletionCore {
         return false;
     }
 
-    private isOptionalKeyword(state: ATNState): OptionalState {
-        const transitions = state.transitions
-        const BLOCK_END = state.constructor.BLOCK_END
-        const BLOCK_START = state.constructor.BLOCK_START
+    private computeOptionalBlockEnd(state: ATNState): number | undefined {
+        const transitions = state.transitions;
+        const BLOCK_END = state.constructor.BLOCK_END;
+        const BLOCK_START = state.constructor.BLOCK_START;
         
         if (state.stateType === BLOCK_START && transitions.length == 2) {
-            const a = transitions[0].target
-            const b = transitions[1].target
+            const a = transitions[0].target;
+            const b = transitions[1].target;
 
             if (a.stateType === BLOCK_END) {
-                return {
-                    isOptional: true,
-                    optionalTarget: a.stateNumber
-                }
+                return a.stateNumber;
             } else if (b.stateType === BLOCK_END) {
-                return {
-                    isOptional: true,
-                    optionalTarget: b.stateNumber
-                }
+                return b.stateNumber;
             }
         }
 
-        return {
-            isOptional: false
-        }
+        return undefined;
     }
 
     /**
      * This method follows the given transition and collects all symbols within the same rule that directly follow it
-     * without intermediate transitions to other rules and only if there is a single symbol for a transition.
+     * without intermediate transitions to other rules and only if there is a single symbol for a transition 
+     * (including optional symbols)
      *
      * @param transition The transition from which to start.
      * @returns A list of toke types.
@@ -351,9 +344,10 @@ export class CodeCompletionCore {
 
         const pipeline: ATNState[] = [transition.target];
 
-        const visited = new Set()
-        let isOptional = false
-        let optionalTarget: number | undefined = undefined
+        // We need to keep a list of the nodes we have already visited to avoid loops
+        const visited = new Set();
+        // If we see an optional ( )? block, we want to keep track of when that optional block ends
+        let optionalBlockEnd: number | undefined = undefined;
 
         while (pipeline.length > 0) {
             const state = pipeline.pop();
@@ -363,15 +357,14 @@ export class CodeCompletionCore {
         
                 if (!visited.has(stateNumber)) {
                     visited.add(stateNumber);
-                    if (!isOptional) {
-                        const optionalState = this.isOptionalKeyword(state)
-                        isOptional = optionalState.isOptional
-                        optionalTarget = optionalState.optionalTarget
+                    if (optionalBlockEnd === undefined) {
+                        optionalBlockEnd = this.computeOptionalBlockEnd(state);
                     }
 
                     state.transitions.forEach((outgoing: Transition) => {
                         const outgoingType = outgoing.serializationType
                         const outgoingTarget = outgoing.target
+                        const targetState = outgoingTarget.stateNumber
 
                         if (outgoingType === outgoing.constructor.ATOM || outgoingType === outgoing.constructor.EPSILON) {
                             if (!outgoing.isEpsilon) {
@@ -379,19 +372,18 @@ export class CodeCompletionCore {
                                 if (list.length === 1 && !this.ignoredTokens.has(list[0])) {
                                     const current: FollowingToken = {
                                         index: list[0],
-                                        optional: isOptional
+                                        optional: optionalBlockEnd !== undefined
                                     }
                                     result.push(current);
                                     pipeline.push(outgoingTarget);
                                     
-                                    // Reset the state type for the next optional
-                                    const targetState = outgoingTarget.stateNumber
-                                    if (isOptional && optionalTarget !== undefined && targetState === optionalTarget) {
-                                        isOptional = false
-                                        optionalTarget = undefined
+                                    // If we find the end of an optional block, reset the state
+                                    if (targetState === optionalBlockEnd) {
+                                        optionalBlockEnd = undefined
                                     }
                                 }
-                            } else if (outgoingTarget.stateNumber !== optionalTarget) {
+                            // This avoid us to be pushing the end of an optional block twice
+                            } else if (targetState !== optionalBlockEnd) {
                                 pipeline.push(outgoing.target);
                             }
                         }
